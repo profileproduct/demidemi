@@ -330,12 +330,6 @@ class FashionGallery {
                 };
                 item.dataset.index = this.gridItems.length;
 
-                // Add click listener directly to item for better reliability
-                item.addEventListener("click", (e) => {
-                    if (this.isDragging || this.zoomState.isActive) return;
-                    this.enterZoomMode(itemData);
-                });
-
                 this.gridContainer.appendChild(item);
                 this.gridItems.push(itemData);
             }
@@ -768,7 +762,7 @@ class FashionGallery {
             bounds: bounds,
             edgeResistance: 0.65,
             inertia: true,
-            minimumMovement: 5,
+            minimumMovement: 6,
             dragClickables: true,
             throwProps: {
                 x: {
@@ -782,6 +776,9 @@ class FashionGallery {
                     end: (endValue) => Math.round(endValue)
                 }
             },
+            onPress: () => {
+                this.isDragging = false;
+            },
             onDragStart: () => {
                 this.isDragging = true;
                 document.body.classList.add("dragging");
@@ -794,9 +791,19 @@ class FashionGallery {
             },
             onDragEnd: () => {
                 document.body.classList.remove("dragging");
-                setTimeout(() => {
-                    this.isDragging = false;
-                }, 50);
+            },
+            onRelease: (e) => {
+                if (!this.isDragging && !this.zoomState.isActive) {
+                    // It was a click/tap!
+                    const itemElement = e.target.closest('.grid-item');
+                    if (itemElement) {
+                        const index = parseInt(itemElement.dataset.index);
+                        if (!isNaN(index) && this.gridItems[index]) {
+                            const itemData = this.gridItems[index];
+                            this.enterZoomMode(itemData);
+                        }
+                    }
+                }
             }
         })[0];
     }
