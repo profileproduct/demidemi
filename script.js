@@ -313,8 +313,8 @@ class FashionGallery {
     initImageData() {
         // Dog images
         this.fashionImages = [];
-        // Assuming 14 images for now, user can add more
-        for (let i = 1; i <= 14; i++) {
+        // Found 7 images from user
+        for (let i = 1; i <= 7; i++) {
             // You can just name your files 1.jpg, 2.jpg, etc. inside the images folder
             const paddedNumber = String(i).padStart(2, "0");
             // Changed to local path
