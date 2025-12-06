@@ -458,6 +458,17 @@ h3 {
     .description-line {
         font-size: 14px;
     }
+
+    /* Full screen lightbox on mobile */
+    .split-left {
+        width: 100vw;
+        background: rgba(0, 0, 0, 0.9);
+        /* Darker background for lightbox feel */
+    }
+
+    .split-right {
+        display: none;
+    }
 }
 
 /* Hide placeholder when active */
