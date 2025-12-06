@@ -197,126 +197,10 @@ class FashionGallery {
             initialZoom: 0.6,
             centerPoint: { x: 0, y: 0 }
         };
-        // Initialize sound system
-        this.initSoundSystem();
         // Initialize image data
         this.initImageData();
     }
-    initSoundSystem() {
-        this.soundSystem = {
-            enabled: false,
-            sounds: {
-                click: new Audio("https://assets.codepen.io/7558/glitch-fx-001.mp3"),
-                open: new Audio("https://assets.codepen.io/7558/click-glitch-001.mp3"),
-                close: new Audio("https://assets.codepen.io/7558/click-glitch-001.mp3"),
-                "zoom-in": new Audio(
-                    "https://assets.codepen.io/7558/whoosh-fx-001.mp3"
-                ),
-                "zoom-out": new Audio(
-                    "https://assets.codepen.io/7558/whoosh-fx-001.mp3"
-                ),
-                "drag-start": new Audio(
-                    "https://assets.codepen.io/7558/preloader-2s-001.mp3"
-                ),
-                "drag-end": new Audio(
-                    "https://assets.codepen.io/7558/preloader-2s-001.mp3"
-                )
-            },
-            play: (soundName) => {
-                if (!this.soundSystem.enabled || !this.soundSystem.sounds[soundName])
-                    return;
-                try {
-                    const audio = this.soundSystem.sounds[soundName];
-                    audio.currentTime = 0;
-                    audio.play().catch(() => { });
-                } catch (e) {
-                    // Silently handle audio errors
-                }
-            },
-            toggle: () => {
-                this.soundSystem.enabled = !this.soundSystem.enabled;
-                this.soundToggle.classList.toggle("active", this.soundSystem.enabled);
-                // Prevent visual conflicts during sound toggle
-                if (this.zoomState.isActive) return;
-                if (this.soundSystem.enabled) {
-                    // Delay sound to prevent flashing during visual updates
-                    setTimeout(() => {
-                        this.soundSystem.play("click");
-                    }, 50);
-                }
-            }
-        };
-        // Preload sounds
-        Object.values(this.soundSystem.sounds).forEach((audio) => {
-            audio.preload = "auto";
-            audio.volume = 0.3;
-        });
-        // Initialize sound wave canvas animation
-        this.initSoundWave();
-    }
-    initSoundWave() {
-        const canvas = document.getElementById("soundWaveCanvas");
-        if (!canvas) return;
-        const ctx = canvas.getContext("2d");
-        const width = 32;
-        const height = 16;
-        const centerY = Math.floor(height / 2);
-        let startTime = Date.now();
-        let currentAmplitude = this.soundSystem.enabled ? 1 : 0;
-        const interpolateColor = (color1, color2, factor) => {
-            const r1 = parseInt(color1.substring(1, 3), 16);
-            const g1 = parseInt(color1.substring(3, 5), 16);
-            const b1 = parseInt(color1.substring(5, 7), 16);
-            const r2 = parseInt(color2.substring(1, 3), 16);
-            const g2 = parseInt(color2.substring(3, 5), 16);
-            const b2 = parseInt(color2.substring(5, 7), 16);
-            const r = Math.round(r1 + factor * (r2 - r1))
-                .toString(16)
-                .padStart(2, "0");
-            const g = Math.round(g1 + factor * (g2 - g1))
-                .toString(16)
-                .padStart(2, "0");
-            const b = Math.round(b1 + factor * (b2 - b1))
-                .toString(16)
-                .padStart(2, "0");
-            return `#${r}${g}${b}`;
-        };
-        const animate = () => {
-            const targetAmplitude = this.soundSystem.enabled ? 1 : 0;
-            currentAmplitude += (targetAmplitude - currentAmplitude) * 0.08;
-            ctx.clearRect(0, 0, width, height);
-            const time = (Date.now() - startTime) / 1000;
-            const muteFactor = 1 - currentAmplitude;
-            const primaryColor = "#2C1B14";
-            const accentColor = "#A64B23";
-            const muteColor = "#D9C4AA";
-            if (!this.soundSystem.enabled && currentAmplitude < 0.01) {
-                ctx.fillStyle = muteColor;
-                ctx.fillRect(0, centerY, width, 2);
-            } else {
-                ctx.fillStyle = interpolateColor(primaryColor, muteColor, muteFactor);
-                for (let i = 0; i < width; i++) {
-                    const x = i - width / 2;
-                    const e = Math.exp((-x * x) / 50);
-                    const y =
-                        centerY +
-                        Math.cos(x * 0.4 - time * 8) * e * height * 0.35 * currentAmplitude;
-                    ctx.fillRect(i, Math.round(y), 1, 2);
-                }
-                ctx.fillStyle = interpolateColor(accentColor, muteColor, muteFactor);
-                for (let i = 0; i < width; i++) {
-                    const x = i - width / 2;
-                    const e = Math.exp((-x * x) / 80);
-                    const y =
-                        centerY +
-                        Math.cos(x * 0.3 - time * 5) * e * height * 0.25 * currentAmplitude;
-                    ctx.fillRect(i, Math.round(y), 1, 2);
-                }
-            }
-            requestAnimationFrame(animate);
-        };
-        animate();
-    }
+
     initImageData() {
         // Dog images
         this.fashionImages = [];
@@ -444,13 +328,7 @@ class FashionGallery {
                     imageUrl: imageUrl,
                     index: this.gridItems.length
                 };
-                // Add click event for zoom
-                item.addEventListener("click", () => {
-                    if (!this.zoomState.isActive) {
-                        this.soundSystem.play("click");
-                        this.enterZoomMode(itemData);
-                    }
-                });
+                item.dataset.index = this.gridItems.length;
                 this.gridContainer.appendChild(item);
                 this.gridItems.push(itemData);
             }
@@ -535,7 +413,6 @@ class FashionGallery {
         if (this.zoomState.isActive) return;
         this.zoomState.isActive = true;
         this.zoomState.selectedItem = selectedItemData;
-        this.soundSystem.play("open");
         // Disable dragging
         if (this.draggable) this.draggable.disable();
         document.body.classList.add("zoom-mode");
@@ -648,7 +525,6 @@ class FashionGallery {
             !this.zoomState.scalingOverlay
         )
             return;
-        this.soundSystem.play("close");
         document.removeEventListener("keydown", this.handleZoomKeys);
         const splitLeft = document.getElementById("splitLeft");
         const splitRight = document.getElementById("splitRight");
@@ -899,7 +775,6 @@ class FashionGallery {
             },
             onDragStart: () => {
                 document.body.classList.add("dragging");
-                this.soundSystem.play("drag-start");
                 this.lastValidPosition.x = this.draggable.x;
                 this.lastValidPosition.y = this.draggable.y;
             },
@@ -909,9 +784,23 @@ class FashionGallery {
             },
             onDragEnd: () => {
                 document.body.classList.remove("dragging");
-                this.soundSystem.play("drag-end");
-            }
+            },
+            onClick: (e) => this.handleDragClick(e)
         })[0];
+    }
+
+    handleDragClick(e) {
+        if (this.zoomState.isActive) return;
+
+        // Find the clicked item
+        const itemElement = e.target.closest('.grid-item');
+        if (itemElement) {
+            const index = parseInt(itemElement.dataset.index);
+            if (!isNaN(index) && this.gridItems[index]) {
+                const itemData = this.gridItems[index];
+                this.enterZoomMode(itemData);
+            }
+        }
     }
     handleMouseLeave() {
         if (document.body.classList.contains("dragging")) {
@@ -1061,7 +950,6 @@ class FashionGallery {
         const fitZoom = this.calculateFitZoom();
         this.config.currentZoom = fitZoom;
         const newGap = this.calculateGapForZoom(fitZoom);
-        this.soundSystem.play(fitZoom < 0.6 ? "zoom-out" : "zoom-in");
         this.calculateGridDimensions(this.config.currentGap);
         const vw = window.innerWidth;
         const vh = window.innerHeight;
@@ -1143,7 +1031,6 @@ class FashionGallery {
         const newGap = this.calculateGapForZoom(zoomLevel);
         const oldZoom = this.config.currentZoom;
         this.config.currentZoom = zoomLevel;
-        this.soundSystem.play(zoomLevel < oldZoom ? "zoom-out" : "zoom-in");
         this.calculateGridDimensions(this.config.currentGap);
         const vw = window.innerWidth;
         const vh = window.innerHeight;
@@ -1306,7 +1193,6 @@ class FashionGallery {
         document.addEventListener("mouseleave", () => this.handleMouseLeave());
         this.viewport.addEventListener("mouseleave", () => this.handleMouseLeave());
         this.closeButton.addEventListener("click", () => this.exitZoomMode());
-        this.soundToggle.addEventListener("click", () => this.soundSystem.toggle());
 
         // Pinch zoom listeners
         this.viewport.addEventListener("touchstart", this.handleTouchStart.bind(this), { passive: false });
