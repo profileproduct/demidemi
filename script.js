@@ -330,6 +330,43 @@ class FashionGallery {
                 };
                 item.dataset.index = this.gridItems.length;
 
+                // Manual Touch/Click Detection for Mobile Reliability
+                let touchStartX = 0;
+                let touchStartY = 0;
+                let touchStartTime = 0;
+
+                item.addEventListener('touchstart', (e) => {
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                    touchStartTime = Date.now();
+                }, { passive: true });
+
+                item.addEventListener('touchend', (e) => {
+                    if (this.zoomState.isActive) return;
+
+                    const touchEndX = e.changedTouches[0].clientX;
+                    const touchEndY = e.changedTouches[0].clientY;
+
+                    const deltaX = Math.abs(touchEndX - touchStartX);
+                    const deltaY = Math.abs(touchEndY - touchStartY);
+                    const duration = Date.now() - touchStartTime;
+
+                    // If finger moved less than 10px and touch was shorter than 300ms
+                    if (deltaX < 10 && deltaY < 10 && duration < 300) {
+                        e.preventDefault(); // Prevent ghost clicks
+                        this.enterZoomMode(itemData);
+                    }
+                });
+
+                // Keep click for desktop
+                item.addEventListener('click', (e) => {
+                    if (this.isDragging || this.zoomState.isActive) return;
+                    // If it was a mouse click (not synthesized from touch)
+                    if (e.detail > 0) {
+                        this.enterZoomMode(itemData);
+                    }
+                });
+
                 this.gridContainer.appendChild(item);
                 this.gridItems.push(itemData);
             }
