@@ -190,6 +190,13 @@ class FashionGallery {
         };
         this.draggable = null;
         this.viewportObserver = null;
+        // Pinch zoom state
+        this.pinchState = {
+            isPinching: false,
+            startDistance: 0,
+            initialZoom: 0.6,
+            centerPoint: { x: 0, y: 0 }
+        };
         // Initialize sound system
         this.initSoundSystem();
         // Initialize image data
@@ -747,6 +754,98 @@ class FashionGallery {
             this.exitZoomMode();
         }
     }
+
+    // Pinch Zoom Handling
+    handleTouchStart(e) {
+        if (e.touches.length === 2) {
+            this.pinchState.isPinching = true;
+            this.pinchState.startDistance = this.getTouchDistance(e.touches);
+            this.pinchState.initialZoom = this.config.currentZoom;
+
+            // Disable draggable during pinch
+            if (this.draggable) this.draggable.disable();
+        }
+    }
+
+    handleTouchMove(e) {
+        if (!this.pinchState.isPinching || e.touches.length !== 2) return;
+
+        e.preventDefault(); // Prevent browser default zoom
+
+        const currentDistance = this.getTouchDistance(e.touches);
+        const scaleToCheck = currentDistance / this.pinchState.startDistance;
+        let newZoom = this.pinchState.initialZoom * scaleToCheck;
+
+        // Limit zoom range
+        newZoom = Math.min(Math.max(0.1, newZoom), 2.5);
+
+        // Apply zoom immediately without animation for responsiveness
+        this.config.currentZoom = newZoom;
+
+        // Update scale visual
+        gsap.set(this.canvasWrapper, {
+            scale: newZoom
+        });
+
+        this.updatePercentageIndicator(newZoom);
+    }
+
+    handleTouchEnd(e) {
+        if (this.pinchState.isPinching && e.touches.length < 2) {
+            this.pinchState.isPinching = false;
+
+            // Re-enable draggable and recalculate bounds
+            if (this.draggable) {
+                this.draggable.enable();
+                // We need to update the gap and layout for the final zoom level
+                const newGap = this.calculateGapForZoom(this.config.currentZoom);
+                this.animateToNewLayout(newGap);
+            }
+        }
+    }
+
+    getTouchDistance(touches) {
+        return Math.hypot(
+            touches[0].clientX - touches[1].clientX,
+            touches[0].clientY - touches[1].clientY
+        );
+    }
+
+    animateToNewLayout(newGap) {
+        this.config.currentGap = newGap;
+        this.calculateGridDimensions(newGap);
+
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        // Animate items to new gap positions if needed
+        this.gridItems.forEach((itemData) => {
+            const newX = itemData.col * (this.config.itemSize + newGap);
+            const newY = itemData.row * (this.config.itemSize + newGap);
+            itemData.baseX = newX;
+            itemData.baseY = newY;
+            gsap.to(itemData.element, {
+                duration: 0.5,
+                left: newX,
+                top: newY,
+                ease: "power2.out"
+            });
+        });
+
+        // Resize wrapper
+        const newWidth = this.config.cols * (this.config.itemSize + newGap) - newGap;
+        const newHeight = this.config.rows * (this.config.itemSize + newGap) - newGap;
+
+        gsap.to(this.canvasWrapper, {
+            duration: 0.5,
+            width: newWidth,
+            height: newHeight,
+            ease: "power2.out",
+            onComplete: () => {
+                this.initDraggable();
+            }
+        });
+    }
     calculateBounds() {
         const vw = window.innerWidth;
         const vh = window.innerHeight;
@@ -1208,6 +1307,12 @@ class FashionGallery {
         this.viewport.addEventListener("mouseleave", () => this.handleMouseLeave());
         this.closeButton.addEventListener("click", () => this.exitZoomMode());
         this.soundToggle.addEventListener("click", () => this.soundSystem.toggle());
+
+        // Pinch zoom listeners
+        this.viewport.addEventListener("touchstart", this.handleTouchStart.bind(this), { passive: false });
+        this.viewport.addEventListener("touchmove", this.handleTouchMove.bind(this), { passive: false });
+        this.viewport.addEventListener("touchend", this.handleTouchEnd.bind(this));
+
         // Keyboard shortcuts
         document.addEventListener("keydown", (e) => {
             if (this.zoomState.isActive) return;

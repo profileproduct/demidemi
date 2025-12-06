@@ -30,6 +30,7 @@ body {
     overflow: hidden;
     height: 100vh;
     cursor: grab;
+    touch-action: none;
 }
 
 body.dragging {
