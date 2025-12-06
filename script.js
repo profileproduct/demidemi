@@ -188,8 +188,8 @@ class FashionGallery {
             x: 0,
             y: 0
         };
-        this.draggable = null;
         this.viewportObserver = null;
+        this.isDragging = false; // Track dragging state
         // Pinch zoom state
         this.pinchState = {
             isPinching: false,
@@ -329,6 +329,13 @@ class FashionGallery {
                     index: this.gridItems.length
                 };
                 item.dataset.index = this.gridItems.length;
+
+                // Add click listener directly to item for better reliability
+                item.addEventListener("click", (e) => {
+                    if (this.isDragging || this.zoomState.isActive) return;
+                    this.enterZoomMode(itemData);
+                });
+
                 this.gridContainer.appendChild(item);
                 this.gridItems.push(itemData);
             }
@@ -761,7 +768,7 @@ class FashionGallery {
             bounds: bounds,
             edgeResistance: 0.65,
             inertia: true,
-            minimumMovement: 10,
+            minimumMovement: 5,
             dragClickables: true,
             throwProps: {
                 x: {
@@ -776,6 +783,7 @@ class FashionGallery {
                 }
             },
             onDragStart: () => {
+                this.isDragging = true;
                 document.body.classList.add("dragging");
                 this.lastValidPosition.x = this.draggable.x;
                 this.lastValidPosition.y = this.draggable.y;
@@ -786,23 +794,11 @@ class FashionGallery {
             },
             onDragEnd: () => {
                 document.body.classList.remove("dragging");
-            },
-            onClick: (e) => this.handleDragClick(e)
-        })[0];
-    }
-
-    handleDragClick(e) {
-        if (this.zoomState.isActive) return;
-
-        // Find the clicked item
-        const itemElement = e.target.closest('.grid-item');
-        if (itemElement) {
-            const index = parseInt(itemElement.dataset.index);
-            if (!isNaN(index) && this.gridItems[index]) {
-                const itemData = this.gridItems[index];
-                this.enterZoomMode(itemData);
+                setTimeout(() => {
+                    this.isDragging = false;
+                }, 50);
             }
-        }
+        })[0];
     }
     handleMouseLeave() {
         if (document.body.classList.contains("dragging")) {
