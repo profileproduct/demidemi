@@ -1360,6 +1360,36 @@ class FashionGallery {
         this.viewport.addEventListener("touchmove", this.handleTouchMove.bind(this), { passive: false });
         this.viewport.addEventListener("touchend", this.handleTouchEnd.bind(this));
 
+        // Desktop Mouse Wheel Zoom
+        this.viewport.addEventListener("wheel", (e) => {
+            if (this.zoomState.isActive) return;
+            e.preventDefault();
+
+            const zoomSensitivity = -0.001;
+            const delta = e.deltaY * zoomSensitivity;
+            let newZoom = this.config.currentZoom + delta;
+
+            // Limit zoom range
+            newZoom = Math.min(Math.max(0.1, newZoom), 2.5);
+
+            this.config.currentZoom = newZoom;
+
+            // Apply zoom immediately
+            gsap.to(this.canvasWrapper, {
+                scale: newZoom,
+                duration: 0.1,
+                overwrite: true
+            });
+            this.updatePercentageIndicator(newZoom);
+
+            // Debounce layout update
+            if (this.wheelDebounce) clearTimeout(this.wheelDebounce);
+            this.wheelDebounce = setTimeout(() => {
+                const newGap = this.calculateGapForZoom(this.config.currentZoom);
+                this.animateToNewLayout(newGap);
+            }, 100);
+        }, { passive: false });
+
         // Keyboard shortcuts
         document.addEventListener("keydown", (e) => {
             if (this.zoomState.isActive) return;
