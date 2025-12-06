@@ -402,8 +402,10 @@ class FashionGallery {
                 ];
                 imageIndex++;
                 const img = document.createElement("img");
-                img.src = imageUrl;
+                img.dataset.src = imageUrl;
+                img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"; // Transparent placeholder
                 img.alt = `Fashion Portrait ${imageIndex}`;
+                img.classList.add('lazy-image');
                 item.appendChild(img);
                 const itemData = {
                     element: item,
@@ -474,12 +476,38 @@ class FashionGallery {
                         return;
                     }
                     if (entry.isIntersecting) {
-                        entry.target.classList.remove("out-of-view");
-                        gsap.to(entry.target, {
-                            opacity: 1,
-                            duration: 0.6,
-                            ease: "power2.out"
-                        });
+                        const img = entry.target.querySelector('img.lazy-image');
+                        if (img && img.dataset.src) {
+                            img.src = img.dataset.src;
+                            img.onload = () => {
+                                img.removeAttribute('data-src');
+                                img.classList.remove('lazy-image');
+                                gsap.to(entry.target, {
+                                    opacity: 1,
+                                    duration: 0.6,
+                                    ease: "power2.out"
+                                });
+                            };
+                            // If cached, onload might have fired already or not behave as expected if assigned before listener
+                            // But usually assigning src after setting data-src works fine. 
+                            // Safety check for cached images:
+                            if (img.complete && img.naturalHeight !== 0) {
+                                gsap.to(entry.target, {
+                                    opacity: 1,
+                                    duration: 0.6,
+                                    ease: "power2.out"
+                                });
+                            }
+                        } else {
+                            // Already loaded, just fade in
+                            entry.target.classList.remove("out-of-view");
+                            gsap.to(entry.target, {
+                                opacity: 1,
+                                duration: 0.6,
+                                ease: "power2.out"
+                            });
+                        }
+
                     } else {
                         entry.target.classList.add("out-of-view");
                         gsap.to(entry.target, {
@@ -493,7 +521,7 @@ class FashionGallery {
             {
                 root: null,
                 threshold: 0.15,
-                rootMargin: "10%"
+                rootMargin: "50%" // Load images well before they enter viewport
             }
         );
         // Observe all grid items
