@@ -421,8 +421,8 @@ class FashionGallery {
         splitContainer.classList.add("active");
         gsap.to(splitContainer, {
             opacity: 1,
-            duration: 1.2,
-            ease: this.customEase
+            duration: 0.5,
+            ease: "power2.out"
         });
         this.zoomState.scalingOverlay = this.createScalingOverlay(
             selectedItemData.img
@@ -434,8 +434,8 @@ class FashionGallery {
             this.zoomState.scalingOverlay,
             zoomTarget,
             {
-                duration: 1.2,
-                ease: this.customEase,
+                duration: 0.5,
+                ease: "power2.out",
                 absolute: true,
                 onComplete: () => {
                     this.updateTitleOverlay(selectedItemData.index);
@@ -446,11 +446,11 @@ class FashionGallery {
                         opacity: 0
                     });
                     gsap.set("#imageSlideTitle h1", {
-                        y: 60,
+                        y: 30,
                         opacity: 0
                     });
                     gsap.set(this.descriptionLines, {
-                        y: 80,
+                        y: 30,
                         opacity: 0
                     });
                     // Show overlay container immediately
@@ -460,30 +460,30 @@ class FashionGallery {
                         duration: 0.3,
                         ease: "power2.out"
                     });
-                    // Animate in number - much sooner
+                    // Animate in number
                     gsap.to("#imageSlideNumber span", {
-                        duration: 0.8,
+                        duration: 0.4,
                         y: 0,
                         opacity: 1,
-                        ease: this.customEase,
-                        delay: 0.1
+                        ease: "power2.out",
+                        delay: 0
                     });
-                    // Animate in title - sooner
+                    // Animate in title
                     gsap.to("#imageSlideTitle h1", {
-                        duration: 0.8,
+                        duration: 0.4,
                         y: 0,
                         opacity: 1,
-                        ease: this.customEase,
-                        delay: 0.15
+                        ease: "power2.out",
+                        delay: 0.05
                     });
-                    // Animate description lines one by one - much sooner
+                    // Animate description lines
                     gsap.to(this.descriptionLines, {
-                        duration: 0.8,
+                        duration: 0.4,
                         y: 0,
                         opacity: 1,
-                        ease: this.customEase,
-                        delay: 0.2,
-                        stagger: 0.15
+                        ease: "power2.out",
+                        delay: 0.1,
+                        stagger: 0.05
                     });
                 }
             }
@@ -498,9 +498,9 @@ class FashionGallery {
             {
                 x: 0,
                 opacity: 1,
-                duration: 0.6,
+                duration: 0.4,
                 ease: "power2.out",
-                delay: 0.9
+                delay: 0.3
             }
         );
         this.closeButton.classList.add("active");
@@ -542,28 +542,28 @@ class FashionGallery {
         const overlayElement = this.imageTitleOverlay;
         gsap.to(overlayElement, {
             opacity: 0,
-            duration: 0.3,
+            duration: 0.2,
             ease: "power2.out"
         });
         gsap.to("#imageSlideNumber span", {
-            duration: 0.4,
+            duration: 0.2,
             y: -20,
             opacity: 0,
             ease: "power2.out"
         });
         gsap.to("#imageSlideTitle h1", {
-            duration: 0.4,
-            y: -60,
+            duration: 0.2,
+            y: -30,
             opacity: 0,
             ease: "power2.out"
         });
         if (this.descriptionLines) {
             gsap.to(this.descriptionLines, {
-                duration: 0.4,
-                y: -80,
+                duration: 0.2,
+                y: -30,
                 opacity: 0,
                 ease: "power2.out",
-                stagger: -0.05,
+                stagger: -0.02,
                 onComplete: () => {
                     overlayElement.classList.remove("active");
                     // Reset all text elements
@@ -572,18 +572,18 @@ class FashionGallery {
                         opacity: 0
                     });
                     gsap.set("#imageSlideTitle h1", {
-                        y: 60,
+                        y: 30,
                         opacity: 0
                     });
                     gsap.set(this.descriptionLines, {
-                        y: 80,
+                        y: 30,
                         opacity: 0
                     });
                 }
             });
         }
         gsap.to(this.closeButton, {
-            duration: 0.3,
+            duration: 0.2,
             opacity: 0,
             x: 40,
             ease: "power2.in"
@@ -592,12 +592,12 @@ class FashionGallery {
         this.controlsContainer.classList.remove("split-mode");
         gsap.to(splitContainer, {
             opacity: 0,
-            duration: 0.8,
+            duration: 0.5,
             ease: "power2.out"
         });
         Flip.fit(this.zoomState.scalingOverlay, selectedElement, {
-            duration: 1.2,
-            ease: this.customEase,
+            duration: 0.5,
+            ease: "power2.out",
             absolute: true,
             onComplete: () => {
                 gsap.set(selectedImg, {
@@ -619,7 +619,7 @@ class FashionGallery {
         if (this.zoomState.scalingOverlay) {
             gsap.to(this.zoomState.scalingOverlay, {
                 opacity: 0.4,
-                duration: 0.8,
+                duration: 0.5,
                 ease: "power2.out"
             });
         }
@@ -759,8 +759,10 @@ class FashionGallery {
         this.draggable = Draggable.create(this.canvasWrapper, {
             type: "x,y",
             bounds: bounds,
-            edgeResistance: 0.8,
+            edgeResistance: 0.65,
             inertia: true,
+            minimumMovement: 10,
+            dragClickables: true,
             throwProps: {
                 x: {
                     velocity: "auto",
